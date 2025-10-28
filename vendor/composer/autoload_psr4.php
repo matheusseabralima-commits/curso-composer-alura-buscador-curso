@@ -6,5 +6,5 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
-    'SeuNome\\Aluraplay\\' => array($baseDir . '/src'),
+    'Alura\\Mvc\\' => array($baseDir . '/'),
 );

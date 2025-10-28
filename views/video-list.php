@@ -6,10 +6,19 @@ require_once __DIR__ . '/inicio-html.php';
 <ul class="videos__container">
     <?php foreach ($videoList as $video): ?>
         <li class="videos__item">
-            <iframe width="100%" height="72%" src="<?= $video->url; ?>"
-                    title="YouTube video player" frameborder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen></iframe>
+            
+            <!-- 
+                INÍCIO DA ALTERAÇÃO:
+                Removemos o <iframe> e colocamos a imagem de capa
+                dentro de um link para a URL do vídeo.
+            -->
+            <a href="<?= $video->url; ?>" target="_blank" title="Assistir: <?= $video->title; ?>">
+                <img src="<?= $video->image_path; ?>" 
+                     alt="Capa do vídeo <?= $video->title; ?>" 
+                     style="width: 100%; height: 72%; object-fit: cover;">
+            </a>
+            <!-- FIM DA ALTERAÇÃO -->
+
             <div class="descricao-video">
                 <h3><?= $video->title; ?></h3>
                 <div class="acoes-video">

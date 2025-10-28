@@ -40,10 +40,19 @@ $videoList = $pdo->query('SELECT * FROM videos;')->fetchAll(PDO::FETCH_ASSOC);
         <!-- A lista de vídeos -->
         <?php foreach ($videoList as $video): ?>
             <li class="videos__item">
-                <iframe width="100%" height="72%" src="<?= htmlspecialchars($video['url']); ?>"
-                    title="YouTube video player" frameborder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen></iframe>
+                
+                <!-- 
+                    INÍCIO DA ALTERAÇÃO:
+                    Trocamos o <iframe> pela imagem de capa clicável.
+                    Note que usamos $video['image_path'] que vem do banco.
+                -->
+                <a href="<?= htmlspecialchars($video['url']); ?>" target="_blank" title="Assistir: <?= htmlspecialchars($video['title']); ?>">
+                    <img src="<?= htmlspecialchars($video['image_path']); ?>" 
+                         alt="Capa do vídeo <?= htmlspecialchars($video['title']); ?>" 
+                         style="width: 100%; height: 72%; object-fit: cover;">
+                </a>
+                <!-- FIM DA ALTERAÇÃO -->
+
                 <div class="descricao-video">
                     <img src="./img/logo.png" alt="logo canal alura">
                     <h3><?= htmlspecialchars($video['title']); ?></h3>
@@ -57,4 +66,3 @@ $videoList = $pdo->query('SELECT * FROM videos;')->fetchAll(PDO::FETCH_ASSOC);
     </ul>
 </body>
 </html>
-

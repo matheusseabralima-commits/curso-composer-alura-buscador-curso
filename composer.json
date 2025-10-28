@@ -1,11 +1,12 @@
 {
-    "name": "seu-nome/aluraplay",
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "matheusseabra/aluraplay",
     "description": "Projeto de videos da Alura",
     "type": "project",
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "SeuNome\\Aluraplay\\": "src/"
+            "Alura\\Mvc\\": "src/"
         }
     },
     "authors": [
