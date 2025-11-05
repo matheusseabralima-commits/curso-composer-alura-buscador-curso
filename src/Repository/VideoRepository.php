@@ -1,97 +1,66 @@
 <?php
-
 declare(strict_types=1);
-
 namespace Alura\Mvc\Repository;
 
-use Alura\Mvc\Entity\Video;
+use Alura\Mvc\Modelo\Video; // Importa a "Planta"
 use PDO;
 
 class VideoRepository
 {
-    public function __construct(private PDO $pdo)
-    {
-    }
+    public function __construct(private PDO $pdo) {}
 
     public function add(Video $video): bool
     {
-        // Seu código de adicionar vídeo (INSERT)
-        // Lembre-se de ATUALIZAR este INSERT para incluir :image_path
-        $sql = 'INSERT INTO videos (url, title, image_path) VALUES (:url, :title, :image_path)';
+        $sql = 'INSERT INTO videos (url, title, file_path) VALUES (?, ?, ?)';
         $stmt = $this->pdo->prepare($sql);
-        $stmt->bindValue(':url', $video->url);
-        $stmt->bindValue(':title', $video->title);
-        $stmt->bindValue(':image_path', $video->image_path);
-
-        $result = $stmt->execute();
-        
-        if ($result === false) {
-            return false;
-        }
-
-        $id = $this->pdo->lastInsertId();
-        $video->setId((int)$id);
-
-        return true;
+        $stmt->bindValue(1, $video->url);
+        $stmt->bindValue(2, $video->title);
+        $stmt->bindValue(3, $video->file_path);
+        return $stmt->execute();
     }
 
     public function remove(int $id): bool
     {
-        // Seu código de remover
         $sql = 'DELETE FROM videos WHERE id = ?';
         $stmt = $this->pdo->prepare($sql);
-        $stmt->bindValue(1, $id, PDO::PARAM_INT);
+        $stmt->bindValue(1, $id);
         return $stmt->execute();
     }
 
     public function update(Video $video): bool
     {
-        // Seu código de atualizar
-        // Lembre-se de ATUALIZAR este UPDATE para incluir image_path
-        $sql = 'UPDATE videos SET url = :url, title = :title, image_path = :image_path WHERE id = :id;';
+        $sql = 'UPDATE videos SET url = :url, title = :title, file_path = :file_path WHERE id = :id';
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':url', $video->url);
         $stmt->bindValue(':title', $video->title);
-        $stmt->bindValue(':image_path', $video->image_path);
+        $stmt->bindValue(':file_path', $video->file_path);
         $stmt->bindValue(':id', $video->id, PDO::PARAM_INT);
-
         return $stmt->execute();
     }
 
-    /**
-     * @return Video[]
-     */
+    /** @return Video[] */
     public function all(): array
     {
-        // 1. GARANTA QUE VOCÊ ESTÁ SELECIONANDO A NOVA COLUNA (SELECT *)
         $videoList = $this->pdo->query('SELECT * FROM videos;')->fetchAll(PDO::FETCH_ASSOC);
-        
-        return array_map(
-            $this->hydrateVideo(...),
-            $videoList
-        );
+        return array_map(fn($d) => $this->hydrateVideo($d), $videoList);
     }
 
-    public function find(int $id)
+    public function find(int $id): Video|false
     {
-        // Lembre-se de atualizar este SELECT também
         $stmt = $this->pdo->prepare('SELECT * FROM videos WHERE id = ?;');
         $stmt->bindValue(1, $id, PDO::PARAM_INT);
         $stmt->execute();
-
-        return $this->hydrateVideo($stmt->fetch(PDO::FETCH_ASSOC));
+        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $data === false ? false : $this->hydrateVideo($data);
     }
 
-    private function hydrateVideo(array $videoData): Video
+    private function hydrateVideo(array $data): Video
     {
-        // 2. PASSE A NOVA INFORMAÇÃO PARA O CONSTRUTOR DA ENTIDADE
-        $video = new Video(
-            $videoData['url'], 
-            $videoData['title'], 
-            $videoData['image_path'] // <-- A MUDANÇA ESTÁ AQUI
+        return new Video(
+            $data['url'],
+            $data['title'],
+            $data['id'],
+            $data['file_path']
         );
-        $video->setId($videoData['id']);
-
-        return $video;
     }
 }

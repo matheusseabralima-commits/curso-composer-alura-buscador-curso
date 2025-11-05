@@ -24,6 +24,8 @@ body {
 
 /* ESTILOS DO HEADER */
 
+/* ESTILOS DO HEADER */
+
 .cabecalho {
     background-color: white;
     position: fixed;
@@ -33,7 +35,6 @@ body {
     padding: 0 25px;
     z-index: 2;
 }
-
 .logo {
     background-image: url(../img/cabecalho/Logo.png);
     background-repeat: no-repeat;
@@ -108,4 +109,8 @@ body {
         height: 100vh;
     }
 
+}
+.formulario__titulo.erro {
+    color: red;
+    margin-top: 1rem;
 }

@@ -4,33 +4,46 @@ declare(strict_types=1);
 
 namespace Alura\Mvc\Controller;
 
+use Alura\Mvc\Modelo\Video; // Importante
 use Alura\Mvc\Repository\VideoRepository;
-
-class VideoFormsController
+use Nyholm\Psr7\Response;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface; // <-- 1. Mude para a interface correta
+class VideoFormsController implements RequestHandlerInterface
 {
-    public function __construct(private VideoRepository $videoRepository)
+    public function __construct(private VideoRepository $repository)
     {
     }
 
-    public function showForm(): void
+    // 3. Renomeie para 'handle' e receba a Request PSR-7
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
-        $video = [
-            'url' => '',
-            'title' => '',
-        ];
+        // 4. Pegue o 'id' dos parâmetros da query (jeito PSR-7)
+        $queryParams = $request->getQueryParams();
+        $id = filter_var($queryParams['id'] ?? null, FILTER_VALIDATE_INT);
+
+        // 5. Crie um objeto Video "vazio" para o formulário
+        // (Assumindo que seu Video.php tem o construtor que eu sugeri antes)
+        $video = new Video(url: '', title: ''); 
 
         if ($id !== false && $id !== null) {
-            $foundVideo = $this->videoRepository->findById($id);
-
+            // 'findByID()' é o método padrão do repositório
+            $foundVideo = $this->repository->find($id); 
             if ($foundVideo) {
-                $video = [
-                    'url' => $foundVideo->url,
-                    'title' => $foundVideo->title,
-                ];
+                // Se encontrou, substitui o vídeo "vazio" pelo vídeo do banco
+                $video = $foundVideo;
             }
         }
 
-        require_once __DIR__ . '/../../views/video-form.php';
+        // Renderiza a view
+        ob_start();
+        
+        // Agora, o $video (objeto) é passado para a view
+        require __DIR__ . '/../../views/video-form.php'; 
+        
+        $html = ob_get_clean();
+
+        return new Response(200, ['Content-Type' => 'text/html'], $html);
     }
 }

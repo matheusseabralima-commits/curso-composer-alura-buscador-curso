@@ -1,19 +1,16 @@
 {
-    "$schema": "https://getcomposer.org/schema.json",
     "name": "matheusseabra/aluraplay",
-    "description": "Projeto de videos da Alura",
-    "type": "project",
-    "license": "MIT",
     "autoload": {
         "psr-4": {
             "Alura\\Mvc\\": "src/"
         }
     },
-    "authors": [
-        {
-            "name": "Matheus Seabra Lima",
-            "email": "matheusseabralima@gmail.com"
-        }
-    ],
-    "require": {}
+    "require": {
+        "psr/http-message": "^2.0",
+        "nyholm/psr7": "^1.8",
+        "nyholm/psr7-server": "^1.1",
+        "psr/http-server-handler": "^1.0",
+        "psr/container": "^2.0",
+        "php-di/php-di": "^7.1"
+    }
 }

@@ -4,10 +4,18 @@ declare(strict_types=1);
 
 namespace Alura\Mvc\Controller;
 
-class Error404Controller implements Controller
+use Nyholm\Psr7\Response;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface; // <-- Interface CORRETA
+
+// Implementa a interface CORRETA
+class Error404Controller implements RequestHandlerInterface
 {
-    public function processaRequisicao(): void
+    // Usa o método CORRETO
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        http_response_code(404);
+        $body = '<h1>Erro 404 - Página não encontrada</h1>';
+        return new Response(404, [], $body);
     }
 }

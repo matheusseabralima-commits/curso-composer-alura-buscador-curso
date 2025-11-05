@@ -4,14 +4,23 @@ declare(strict_types=1);
 
 namespace Alura\Mvc\Controller;
 
-class LogoutController implements Controller
+use Nyholm\Psr7\Response;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+
+class LogoutController implements RequestHandlerInterface
 {
-    public function processaRequisicao(): void
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        // Destrói a sessão (faz o logout)
+        // 1. Destruir a sessão
         session_destroy();
         
-        // Redireciona o usuário para a página de login
-        header('Location: /login');
+        // 2. Limpar a variável $_SESSION (garantia)
+        $_SESSION = [];
+
+        // 3. Redirecionar para a página de login
+        // (O seu index.php tem uma rota '/login')
+        return new Response(302, ['Location' => '/login']);
     }
 }

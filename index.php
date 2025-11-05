@@ -1,68 +1,64 @@
 <?php
-// INICIA A SESSÃO
-session_start();
+declare(strict_types=1);
 
-// ESTE É O PROTETOR. Se não está logado, expulsa para o login.php
-if (!isset($_SESSION['logado']) || $_SESSION['logado'] !== true) {
-    header('Location: /login.php'); 
-    exit();
+use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Container\ContainerInterface;
+use Nyholm\Psr7\Factory\Psr17Factory;
+use Nyholm\Psr7Server\ServerRequestCreator;
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+/** @var ContainerInterface $diContainer */
+$diContainer = require_once __DIR__ . '/config/dependencies.php';
+
+// O "MAPA" NOVO (com GET/POST)
+$rotas = [
+    'GET|/' => Alura\Mvc\Controller\LoginFormController::class,
+    'GET|/login' => Alura\Mvc\Controller\LoginFormController::class,
+    'POST|/login' => Alura\Mvc\Controller\LoginController::class,
+    'GET|/logout' => Alura\Mvc\Controller\LogoutController::class,
+    'GET|/videos' => Alura\Mvc\Controller\VideoListController::class,
+    'GET|/novo-video' => Alura\Mvc\Controller\VideoFormController::class,
+    'POST|/novo-video' => Alura\Mvc\Controller\VideoCreateController::class,
+    'GET|/editar-video' => Alura\Mvc\Controller\VideoFormController::class,
+    'POST|/editar-video' => Alura\Mvc\Controller\EditVideoController::class,
+    'GET|/remover-video' => Alura\Mvc\Controller\VideoRemoveController::class,
+    'GET|/json-videos' => Alura\Mvc\Controller\JsonVideoListController::class,
+];
+
+session_start();
+session_regenerate_id();
+
+$pathInfo = $_SERVER['PATH_INFO'] ?? '/';
+$httpMethod = $_SERVER['REQUEST_METHOD'];
+$key = "$httpMethod|$pathInfo";
+
+$isLoginRoute = $key === 'GET|/' || $key === 'GET|/login' || $key === 'POST|/login';
+if (array_key_exists('logado', $_SESSION) === false && $isLoginRoute === false) {
+    header('Location: /login');
+    return;
 }
 
-// Se chegou aqui, está logado.
-require_once 'conexao.php';
-$videoList = $pdo->query('SELECT * FROM videos;')->fetchAll(PDO::FETCH_ASSOC);
-?>
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./css/reset.css">
-    <link rel="stylesheet" href="./css/estilos.css">
-    <link rel="stylesheet" href="./css/flexbox.css">
-    <title>AluraPlay</title>
-</head>
-<body>
-    <header>
-        <nav class="cabecalho">
-            <a class="logo" href="./index.php"></a>
-            <div class="cabecalho__icones">
-                <a href="enviar-video.php" class="cabecalho__videos"></a>
-                <!-- Link para o logout -->
-                <a href="fazer-logout.php" class="cabecalho__sair">Sair</a>
-            </div>
-        </nav>
-    </header>
+if (array_key_exists($key, $rotas)) {
+    $controllerClass = $rotas[$key];
+} else {
+    $controllerClass = Alura\Mvc\Controller\Error404Controller::class;
+}
 
-    <ul class="videos__container" alt="videos alura">
-        <!-- A lista de vídeos -->
-        <?php foreach ($videoList as $video): ?>
-            <li class="videos__item">
-                
-                <!-- 
-                    INÍCIO DA ALTERAÇÃO:
-                    Trocamos o <iframe> pela imagem de capa clicável.
-                    Note que usamos $video['image_path'] que vem do banco.
-                -->
-                <a href="<?= htmlspecialchars($video['url']); ?>" target="_blank" title="Assistir: <?= htmlspecialchars($video['title']); ?>">
-                    <img src="<?= htmlspecialchars($video['image_path']); ?>" 
-                         alt="Capa do vídeo <?= htmlspecialchars($video['title']); ?>" 
-                         style="width: 100%; height: 72%; object-fit: cover;">
-                </a>
-                <!-- FIM DA ALTERAÇÃO -->
+$psr17Factory = new Psr17Factory();
+$creator = new ServerRequestCreator(
+    $psr17Factory, $psr17Factory, $psr17Factory, $psr17Factory
+);
+$request = $creator->fromGlobals();
 
-                <div class="descricao-video">
-                    <img src="./img/logo.png" alt="logo canal alura">
-                    <h3><?= htmlspecialchars($video['title']); ?></h3>
-                    <div class="acoes-video">
-                        <a href="editar-video.php?id=<?= $video['id']; ?>">Editar</a>
-                        <a href="remover-video.php?id=<?= $video['id']; ?>">Excluir</a>
-                    </div>
-                </div>
-            </li>
-        <?php endforeach; ?>
-    </ul>
-</body>
-</html>
+/** @var RequestHandlerInterface $controller */
+$controller = $diContainer->get($controllerClass);
+$response = $controller->handle($request);
+
+http_response_code($response->getStatusCode());
+foreach ($response->getHeaders() as $name => $values) {
+    foreach ($values as $value) {
+        header(sprintf('%s: %s', $name, $value), false);
+    }
+}
+echo $response->getBody();

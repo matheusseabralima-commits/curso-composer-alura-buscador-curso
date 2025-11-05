@@ -1,46 +1,75 @@
 <?php
-
 declare(strict_types=1);
 
 namespace Alura\Mvc\Controller;
 
+// 1. Conserta o "unknown class" (Erro 1 da imagem)
+use Alura\Mvc\Modelo\Video; 
 use Alura\Mvc\Repository\VideoRepository;
-use Alura\Mvc\Entity\Video;
+use Nyholm\Psr7\Response;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\UploadedFileInterface;
+use Psr\Http\Server\RequestHandlerInterface; // Conserta o "MiddlewareInterface" zumbi
 
-class VideoEditController
+class VideoEditController implements RequestHandlerInterface // Padrão CORRETO
 {
     public function __construct(private VideoRepository $videoRepository)
     {
     }
 
-    public function Edit(): void
+    public function handle(ServerRequestInterface $request): ResponseInterface // Método CORRETO
     {
-        $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
-        if ($id === false || $id === null) {
-            header('Location: /?sucesso=0');
-            exit();
+        $postData = $request->getParsedBody();
+        $id = filter_var($postData['id'] ?? '', FILTER_VALIDATE_INT);
+        $url = filter_var($postData['url'] ?? '', FILTER_SANITIZE_URL);
+        
+        // No form, o name="titulo"
+        $title = filter_var($postData['titulo'] ?? '', FILTER_SANITIZE_STRING);
+
+        if ($id === false || $id === null || $url === false || $title === false) {
+            return new Response(302, ['Location' => '/videos?sucesso=0']);
         }
 
-        // Valida URL e título
-        $url = filter_input(INPUT_POST, 'url', FILTER_VALIDATE_URL);
-        $titulo = filter_input(INPUT_POST, 'titulo');
-
-        if ($url === false || $titulo === false) {
-            header('Location: /?sucesso=0');
-            exit();
+        // Conserta o "findByID" (erro de 'image_373335.png')
+        $oldVideo = $this->videoRepository->find($id); 
+        if ($oldVideo === false) {
+            return new Response(302, ['Location' => '/videos?sucesso=0']);
         }
 
-        // Cria o objeto Video (id preenchido)
-        $video = new Video($url, $titulo, $id);
-        $repository = $this->videoRepository;
+        // 2. Conserta o construtor (Erro 2 da imagem)
+        // Usa a "Planta" de 4 argumentos
+        $video = new Video(url: $url, title: $title, id: $id);
+        
+        // 3. Lógica de Upload de Imagem
+        $files = $request->getUploadedFiles();
+        /** @var ?UploadedFileInterface $uploadedImage */
+        $uploadedImage = $files['image'] ?? null;
 
-        // Atualiza no banco
-        $sucesso = $repository->update($video);
+        if ($uploadedImage !== null && $uploadedImage->getError() === UPLOAD_ERR_OK) {
+            // Se uma IMAGEM NOVA foi enviada
+            $safeFileName = uniqid('upload_') . '_' . pathinfo($uploadedImage->getClientFilename(), PATHINFO_BASENAME);
+            $targetPath = __DIR__ . '/../../public/img/uploads/' . $safeFileName;
+            
+            if ($oldVideo->file_path !== null && file_exists(__DIR__ . '/../../public/img/uploads/' . $oldVideo->file_path)) {
+                unlink(__DIR__ . '/../../public/img/uploads/' . $oldVideo->file_path);
+            }
 
-        if ($sucesso) {
-            header('Location: /?sucesso=1');
+            $uploadedImage->moveTo($targetPath);
+            $video->file_path = $safeFileName;
         } else {
-            header('Location: /?sucesso=0');
+            // Se NENHUMA imagem nova foi enviada, mantenha a antiga.
+            $video->file_path = $oldVideo->file_path;
         }
-    }
-}
+
+        // 4. Conserta o 'update' (Erro 3 da imagem)
+        // O 'update' do Repositório novo só aceita UM argumento
+        $success = $this->videoRepository->update($video);
+
+        if ($success === false) {
+            return new Response(302, ['Location' => '/videos?sucesso=0']);
+        } else {
+            // Sucesso! Redireciona para a lista de vídeos
+            return new Response(302, ['Location' => '/videos?sucesso=1']);
+        }
+    }}
