@@ -10,7 +10,6 @@ use PDO;
 
 class LoginController implements RequestHandlerInterface
 {
-    // O __construct NOVO que aceita o PDO
     public function __construct(private PDO $pdo)
     {
     }
@@ -22,7 +21,9 @@ class LoginController implements RequestHandlerInterface
         $password = $postData['password'] ?? '';
 
         if ($email === false || $email === null) {
-            return new Response(302, ['Location' => '/login?sucesso=0']);
+            // CORREÇÃO: Usa a sessão para o erro
+            $_SESSION['error_message'] = 'E-mail ou senha inválidos.';
+            return new Response(302, ['Location' => '/login']);
         }
 
         $sql = 'SELECT * FROM users WHERE email = ?';
@@ -31,12 +32,17 @@ class LoginController implements RequestHandlerInterface
         $stmt->execute();
         $userData = $stmt->fetch(PDO::FETCH_ASSOC);
 
+        // Verifica se o usuário existe E se a senha está correta
         $correctPassword = (is_array($userData) && password_verify($password, $userData['password']));
 
         if (!$correctPassword) {
-            return new Response(302, ['Location' => '/login?sucesso=0']);
+            // CORREÇÃO: Usa a sessão para o erro
+            // (Usamos a mesma mensagem genérica por segurança)
+            $_SESSION['error_message'] = 'E-mail ou senha inválidos.';
+            return new Response(302, ['Location' => '/login']);
         }
 
+        // Sucesso!
         session_regenerate_id(true); 
         $_SESSION['logado'] = true;
         return new Response(302, ['Location' => '/videos']);

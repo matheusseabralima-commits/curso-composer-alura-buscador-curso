@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Alura\Mvc\Controller;
 
-use Alura\Mvc\Modelo\Video;
 use Alura\Mvc\Repository\VideoRepository;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
@@ -18,14 +17,13 @@ class VideoListController implements RequestHandlerInterface
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        // Esta é a Linha 23 (aproximadamente)
-        // Ela está chamando o método 'all()'
         $videos = $this->videoRepository->all(); 
 
         ob_start();
         
         // Esta view precisa da variável $videos
-        require_once __DIR__ . '/../../views/video-list.php';
+        // Ela também deve incluir o 'inicio-html.php' e 'fim-html.php'
+        require_once __DIR__ . '/../../views/video-list.php'; 
         
         $htmlBody = ob_get_clean();
 
